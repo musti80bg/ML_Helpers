@@ -22,9 +22,10 @@ b = 0.0
 
 m = x_matrix.shape[0]
 w_matrix = w_vector.reshape(-1, 1)
-y_pred = x_matrix @ w_matrix + b
-y_pred = y_pred[:,0]
-error = (y_pred - y_vector)**2
-error_sum = error.sum()
-cost = error_sum / (2*m)
-print(cost)
+y_pred = x_matrix @ w_vector + b
+#y_pred = y_pred[:,0]
+# error = (y_pred - y_vector)**2
+# error_sum = error.sum()
+# cost = error_sum / (2*m)
+print(x_matrix)
+print(w_vector)

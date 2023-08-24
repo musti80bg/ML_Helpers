@@ -51,9 +51,31 @@ def cost_fn(x_matrix, y_vector, w_vector, b):
     cost (scalar)
   '''
   m = x_matrix.shape[0]
-  w_matrix = w_vector.reshape(-1, 1)
-  y_pred = x_matrix @ w_matrix + b
-  y_pred = y_pred[:,0]
+  cost = 0.0
+  for i in range(m):
+    x_matrix_i = x_matrix[i]
+    y_i = y_vector[i]
+    y_pred_i = f_fn(x_matrix_i, w_vector, b)
+    error_i = y_pred_i - y_i
+    cost = cost + error_i**2
+  cost = cost / (2*m)
+  return cost
+
+def cost_fn_matrix(x_matrix, y_vector, w_vector, b):
+  '''
+  Returns the cost.
+
+  Parameters:
+    x_matrix (ndarray (m,n))
+    y_vector (ndarray (m,))
+    w_vector (ndarray (n,))
+    b (scalar)
+  
+  Returns:
+    cost (scalar)
+  '''
+  m = x_matrix.shape[0]
+  y_pred = x_matrix @ w_vector + b
   error = (y_pred - y_vector)**2
   error_sum = error.sum()
   cost = error_sum / (2*m)
@@ -90,6 +112,29 @@ def grad_fn(x_matrix, y_vector, w_vector_input, b_input):
   w_vector = w_vector / m
   return w_vector, b
 
+def grad_fn_matrix(x_matrix, y_vector, w_vector_input, b_input):
+  '''
+  Computes gradient(partial derivative) for w and b.
+
+  Parameters:
+    x_matrix (ndarray (m,n))
+    y_vector (ndarray (m,))
+    w_vector_input (ndarray (n,)): w-input
+    b_input (scalar): b-input
+  
+  Returns:
+    w_vector (ndarray (n,)): w-output
+    b (scalar): b-output
+  '''
+  m, n = x_matrix.shape
+  b = 0.0
+  w_vector = np.zeros(n)
+  y_pred = x_matrix @ w_vector_input + b_input              
+  error = y_pred - y_vector               
+  w_vector = (1/m) * (x_matrix.T @ error)    
+  b = (1/m) * np.sum(error)    
+  return w_vector, b
+
 
 def gradient_descent(x_matrix, y_vector, w_vector_init, b_init, epochs, lr):
   '''
@@ -114,11 +159,8 @@ def gradient_descent(x_matrix, y_vector, w_vector_init, b_init, epochs, lr):
   n = x_matrix.shape[1]
   cost_history = []
   for epoch in range(epochs):
-    cost = cost_fn(x_matrix, y_vector, w_vector, b)
-    if(np.isnan(cost)):
-      print(f"cost is nan for epoch {epoch}")
-      break
-    w_vector_grad, b_grad = grad_fn(x_matrix, y_vector, w_vector, b)
+    cost = cost_fn_matrix(x_matrix, y_vector, w_vector, b)
+    w_vector_grad, b_grad = grad_fn_matrix(x_matrix, y_vector, w_vector, b)
     b = b - lr * b_grad
     for j in range(n):
       w_vector[j] = w_vector[j] - lr * w_vector_grad[j]
