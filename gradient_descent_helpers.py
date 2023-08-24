@@ -51,14 +51,12 @@ def cost_fn(x_matrix, y_vector, w_vector, b):
     cost (scalar)
   '''
   m = x_matrix.shape[0]
-  cost = 0.0
-  for i in range(m):
-    x_matrix_i = x_matrix[i]
-    y_i = y_vector[i]
-    y_pred_i = f_fn(x_matrix_i, w_vector, b)
-    error_i = y_pred_i - y_i
-    cost = cost + error_i**2
-  cost = cost / (2*m)
+  w_matrix = w_vector.reshape(-1, 1)
+  y_pred = x_matrix @ w_matrix + b
+  y_pred = y_pred[:,0]
+  error = (y_pred - y_vector)**2
+  error_sum = error.sum()
+  cost = error_sum / (2*m)
   return cost
 
 
