@@ -1,6 +1,155 @@
 import numpy as np
 
 
+def linear_fn(x_matrix, w_vect, b):
+  '''
+  The Fwb(x) function - Computes dependent variable y using matrix multiplication
+
+  Parameters:
+    x_matrix (ndarray (m,n))
+    w_vect (ndarray (n,))
+    b (scalar)
+  
+  Returns:
+    y-prediction (vector)
+  '''
+  y_pred = x_matrix @ w_vect + b
+  return y_pred
+
+
+def logistic_fn(x_matrix, w_vect, b):
+    z = linear_fn(x_matrix, w_vect, b)
+    y_vect = 1 / (1 + np.exp(-z))
+    return y_vect
+
+
+def cost_fn_linear(x_matrix, y_vect, w_vect, b, lambda_reg = 0.0):
+  '''
+  Returns the cost.
+
+  Parameters:
+    x_matrix (ndarray (m,n))
+    y_vect (ndarray (m,))
+    w_vect (ndarray (n,))
+    b (scalar)
+    lambda_reg (scalar): regularization coeff
+  
+  Returns:
+    cost (scalar)
+  '''
+  m = x_matrix.shape[0]
+  y_pred = linear_fn(x_matrix, w_vect,b)
+  error = (y_pred - y_vect)**2
+  error_sum = error.sum()
+  cost = error_sum / (2*m)
+
+  #calc regularization value
+  if(lambda_reg > 0):
+    reg_term = (lambda_reg / (2*m)) * np.sum(w_vect**2)
+    cost += reg_term
+  return cost
+
+
+def cost_fn_logistic(x_matrix, y_vect, w_vect, b, lambda_reg = 0.0):
+    y_pred_vect = logistic_fn(x_matrix, w_vect, b)
+    loss_vect = -y_vect * np.log(y_pred_vect) - (1-y_vect) * np.log(1-y_pred_vect)
+    total_loss = np.sum(loss_vect)
+
+    m = x_matrix.shape[0]
+    cost = total_loss / m
+
+    #calc regularization value
+    if(lambda_reg > 0):
+      reg_term = (lambda_reg / (2*m)) * np.sum(w_vect**2)
+      cost += reg_term
+
+    return cost
+
+
+def grad_fn(x_matrix, y_vect, w_vect_input, b_input, predict_fn, lambda_reg = 0.0):
+  '''
+  Computes gradient(partial derivative) for w and b.
+
+  Parameters:
+    x_matrix (ndarray (m,n))
+    y_vect (ndarray (m,))
+    w_vect_input (ndarray (n,)): w-input
+    b_input (scalar): b-input
+    predict_fn (fn): function to predict dependent variables
+    lambda_reg (scalar): regularization coeff
+  
+  Returns:
+    w_vect (ndarray (n,)): w-output
+    b (scalar): b-output
+  '''
+  m, n = x_matrix.shape
+  b = 0.0
+  w_vect = np.zeros(n)
+  y_pred = predict_fn(x_matrix, w_vect_input, b_input)          
+  error = y_pred - y_vect               
+  w_vect = (1/m) * (x_matrix.T @ error)  
+
+  if(lambda_reg > 0):
+    reg_val_vect = (lambda_reg / m) * w_vect_input
+    w_vect += reg_val_vect
+  
+  b = (1/m) * np.sum(error)    
+  return w_vect, b
+
+
+def grad_fn_linear(x_matrix, y_vect, w_vect_input, b_input, lambda_reg = 0.0):
+  gradient = grad_fn(x_matrix, y_vect, w_vect_input, b_input, linear_fn, lambda_reg)
+  return gradient
+
+def grad_fn_logistic(x_matrix, y_vect, w_vect_input, b_input, lambda_reg = 0.0):
+  gradient = grad_fn(x_matrix, y_vect, w_vect_input, b_input, logistic_fn, lambda_reg)
+  return gradient
+
+
+def gradient_descent(x_matrix, y_vect, w_vect_init, b_init, cost_fn, grad_fn, epochs, lr, lambda_reg = 0.0):
+  '''
+  Performs gradient descent.
+
+  Parameters:
+    x_matrix (ndarray (m,n))
+    y_vect (ndarray (m,))
+    w_vect_init (ndarray (n,)): initial w
+    b_init (scalar): initial b
+    cost_fn (function): cost function to be used
+    grad_fn (function): gradient function to be used
+    epochs (int): number of iterations
+    lr (float): learning rate
+  
+  Returns:
+    w_vect (ndarray (n,))
+    b (scalar)
+    cost_history (list): list of cost for each iteration
+  '''
+  w_vect = w_vect_init
+  b = b_init
+  n = x_matrix.shape[1]
+  cost_history = []
+  for epoch in range(epochs):
+    #get cost
+    cost = cost_fn(x_matrix, y_vect, w_vect, b, lambda_reg)
+    #get gradient
+    w_vect_grad, b_grad = grad_fn(x_matrix, y_vect, w_vect, b, lambda_reg)
+    #update parameters
+    b = b - lr * b_grad
+    w_vect = w_vect - lr * w_vect_grad
+    cost_history.append(cost)
+
+  return w_vect, b, cost_history
+
+
+def run_linear_gd(x_matrix, y_vect, w_vect_init, b_init, epochs, lr, lambda_reg = 0.0):
+  return gradient_descent(x_matrix, y_vect, w_vect_init, b_init, cost_fn_linear, grad_fn_linear, epochs, lr, lambda_reg)
+
+
+def run_logistic_gd(x_matrix, y_vect, w_vect_init, b_init, epochs, lr, lambda_reg = 0.0):
+  return gradient_descent(x_matrix, y_vect, w_vect_init, b_init, cost_fn_logistic, grad_fn_logistic, epochs, lr, lambda_reg)
+
+
 def zscore(x_matrix):
   '''
   Computes z-score normalized matrix.
@@ -19,155 +168,6 @@ def zscore(x_matrix):
   
   x_matrix_z = (x_matrix - mean) / std_dev
   return (x_matrix_z, mean, std_dev)
-
-
-def f_fn(x_vector, w_vector, b):
-  '''
-  The Fwb(x) function - Computes dependent variable y
-
-  Parameters:
-    x_vector (ndarray (n,))
-    w_vector (ndarray (n,))
-    b (scalar)
-  
-  Returns:
-    y-prediction (scalar)
-  '''
-  y_pred = np.dot(x_vector, w_vector) + b
-  return y_pred
-
-
-def cost_fn(x_matrix, y_vector, w_vector, b):
-  '''
-  Returns the cost.
-
-  Parameters:
-    x_matrix (ndarray (m,n))
-    y_vector (ndarray (m,))
-    w_vector (ndarray (n,))
-    b (scalar)
-  
-  Returns:
-    cost (scalar)
-  '''
-  m = x_matrix.shape[0]
-  cost = 0.0
-  for i in range(m):
-    x_matrix_i = x_matrix[i]
-    y_i = y_vector[i]
-    y_pred_i = f_fn(x_matrix_i, w_vector, b)
-    error_i = y_pred_i - y_i
-    cost = cost + error_i**2
-  cost = cost / (2*m)
-  return cost
-
-def cost_fn_matrix(x_matrix, y_vector, w_vector, b):
-  '''
-  Returns the cost.
-
-  Parameters:
-    x_matrix (ndarray (m,n))
-    y_vector (ndarray (m,))
-    w_vector (ndarray (n,))
-    b (scalar)
-  
-  Returns:
-    cost (scalar)
-  '''
-  m = x_matrix.shape[0]
-  y_pred = x_matrix @ w_vector + b
-  error = (y_pred - y_vector)**2
-  error_sum = error.sum()
-  cost = error_sum / (2*m)
-  return cost
-
-
-def grad_fn(x_matrix, y_vector, w_vector_input, b_input):
-  '''
-  Computes gradient(partial derivative) for w and b.
-
-  Parameters:
-    x_matrix (ndarray (m,n))
-    y_vector (ndarray (m,))
-    w_vector_input (ndarray (n,)): w-input
-    b_input (scalar): b-input
-  
-  Returns:
-    w_vector (ndarray (n,)): w-output
-    b (scalar): b-output
-  '''
-  m, n = x_matrix.shape
-  b = 0.0
-  w_vector = np.zeros(n)
-  for i in range(m):
-    x_matrix_i = x_matrix[i]
-    y_i = y_vector[i]
-    y_pred_i = f_fn(x_matrix_i, w_vector_input, b_input)
-    error_i = y_pred_i - y_i
-    b = b + error_i
-    for j in range(n):
-      w_vector[j] = w_vector[j] + error_i * x_matrix_i[j]
-
-  b = b / m
-  w_vector = w_vector / m
-  return w_vector, b
-
-def grad_fn_matrix(x_matrix, y_vector, w_vector_input, b_input):
-  '''
-  Computes gradient(partial derivative) for w and b.
-
-  Parameters:
-    x_matrix (ndarray (m,n))
-    y_vector (ndarray (m,))
-    w_vector_input (ndarray (n,)): w-input
-    b_input (scalar): b-input
-  
-  Returns:
-    w_vector (ndarray (n,)): w-output
-    b (scalar): b-output
-  '''
-  m, n = x_matrix.shape
-  b = 0.0
-  w_vector = np.zeros(n)
-  y_pred = x_matrix @ w_vector_input + b_input              
-  error = y_pred - y_vector               
-  w_vector = (1/m) * (x_matrix.T @ error)    
-  b = (1/m) * np.sum(error)    
-  return w_vector, b
-
-
-def gradient_descent(x_matrix, y_vector, w_vector_init, b_init, epochs, lr):
-  '''
-  Performs gradient descent.
-
-  Parameters:
-    x_matrix (ndarray (m,n))
-    y_vector (ndarray (m,))
-    w_vector_init (ndarray (n,)): initial w
-    b_init (scalar): initial b
-    epochs (int): number of iterations
-    lr (float): learning rate
-  
-  Returns:
-    w_vector (ndarray (n,))
-    b (scalar)
-    cost_history (list): list of cost for each iteration
-  '''
-  w_vector = w_vector_init
-  b = b_init
-  m = x_matrix.shape[0]
-  n = x_matrix.shape[1]
-  cost_history = []
-  for epoch in range(epochs):
-    cost = cost_fn_matrix(x_matrix, y_vector, w_vector, b)
-    w_vector_grad, b_grad = grad_fn_matrix(x_matrix, y_vector, w_vector, b)
-    b = b - lr * b_grad
-    for j in range(n):
-      w_vector[j] = w_vector[j] - lr * w_vector_grad[j]
-    cost_history.append(cost)
-
-  return w_vector, b, cost_history
-
 
 def print_list(list, number_of_prints=10):
   n = len(list)
