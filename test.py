@@ -6,9 +6,9 @@ import gradient_descent_helpers as gd
 import plot_helpers as plth
 
 #read files
-dfTrain = pd.read_csv("data/StoreSales/train_2017.csv")
-dfHolidays = pd.read_csv("data/StoreSales/holidays_events.csv")
-dfOil = pd.read_csv("data/StoreSales/oil.csv")
+dfTrain = pd.read_csv(r"C:\repos\AI\StoreSales\train_2017.csv")
+dfHolidays = pd.read_csv(r"C:\repos\AI\StoreSales\holidays_events.csv")
+dfOil = pd.read_csv(r"C:\repos\AI\StoreSales\oil.csv")
 df = pd.merge(dfTrain, dfHolidays, how="left", on="date")
 df = pd.merge(df, dfOil, how="left", on="date")
 #df=df.loc[df["date"].str.slice(0,4) == "2017"]
@@ -48,4 +48,4 @@ b_init = 0.0
 
 w_vector, b, cost_history = gd.run_linear_gd(x_matrix, y_vect, w_init, b_init, 100, 0.1)
 print(w_vector, b, cost_history[-1])
-plth.plot_vect(cost_history, equal_scale=False)
+plth.show_vect(cost_history, equal_scale=False)
