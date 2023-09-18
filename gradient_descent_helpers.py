@@ -150,24 +150,35 @@ def run_logistic_gd(x_matrix, y_vect, w_vect_init, b_init, epochs, lr, lambda_re
   return gradient_descent(x_matrix, y_vect, w_vect_init, b_init, cost_fn_logistic, grad_fn_logistic, epochs, lr, lambda_reg)
 
 
-def zscore(x_matrix):
+def zscore(x_matrix, column_indexes=None):
   '''
   Computes z-score normalized matrix.
 
   Parameters:
     x_matrix (ndarry (m,n)): matrix to be normalized
-
+    column_indexes (array_like): list of column indexes to be normalized
   Returns:
     x_matrix_z (ndarray (m,n))
-    mean (ndarray (n,))
-    std_dev (ndarray (n,))
   '''
-  x_matrix_z = np.zeros(x_matrix.shape)
-  mean = np.mean(x_matrix, axis=0)
-  std_dev = np.std(x_matrix, axis=0)
-  
-  x_matrix_z = (x_matrix - mean) / std_dev
-  return (x_matrix_z, mean, std_dev)
+  x_matrix_z = None
+  if(column_indexes is None):
+    x_matrix_z = np.zeros(x_matrix.shape)
+    mean = np.mean(x_matrix, axis=0)
+    std_dev = np.std(x_matrix, axis=0)
+    x_matrix_z = (x_matrix - mean) / std_dev
+  else:
+    x_matrix_z = np.copy(x_matrix)
+    for i in column_indexes:
+      x_vect = x_matrix[:,i]
+      x_vect_z = (x_vect - np.mean(x_vect)) / np.std(x_vect)
+      x_matrix_z[:,i] = x_vect_z
+  return x_matrix_z
+
+def get_mae(y_pred_vect, y_vect):
+  mae = np.mean(np.abs(y_pred_vect - y_vect))
+  y_mean = np.mean(y_vect)
+  mae_perc = (mae / y_mean) * 100
+  return (mae, mae_perc)
 
 def print_list(list, number_of_prints=10):
   n = len(list)
